@@ -3,6 +3,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Flow extends CI_Controller
 {
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->model('Send_model');
+    }
 
     /**
      * Webhook for this controller.
@@ -35,7 +40,6 @@ class Flow extends CI_Controller
     /**
      * Handles response to users input/utterances
      */
-
     public function start($userData)
     {
         $orders = array(
