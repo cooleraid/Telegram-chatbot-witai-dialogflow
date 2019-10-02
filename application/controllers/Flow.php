@@ -5,7 +5,7 @@ class Flow extends CI_Controller
 {
 
     /**
-     * Index Page for this controller.
+     * Webhook for this controller.
      *
      * Maps to the following URL
      * 		http://localhost/index.php/flow
@@ -30,5 +30,28 @@ class Flow extends CI_Controller
         $userData['last_name'] = $input['message']['from']['last_name'] ?? null;
         $userData['username'] = $input['message']['from']['username'] ?? null;
         $this->start($userData);
+    }
+    
+    /**
+     * Handles response to users input/utterances
+     */
+
+    public function start($userData)
+    {
+        $orders = array(
+            array( 'tracking_id'=>'1234', 'description'=>'Iphone 11', 'status'=>'Waiting for pick up'),
+            array( 'tracking_id'=>'9797', 'description'=>'Pixel 4', 'status'=>'Shipment dispatched'),
+            array( 'tracking_id'=>'4343', 'description'=>'Samsung Note 10', 'status'=>'Shipment accepted by airline'),
+            array( 'tracking_id'=>'2892', 'description'=>'Haweii P90', 'status'=>'Delivery Successful'),
+        );
+        if ($userData['message'] == '/start') {
+            $count = 1;
+            $tracking_id = "Sample Tracking IDs:\n\n";
+            foreach ($orders as $row) {
+                $tracking_id .= $count++.". ".$row['tracking_id']."\n";
+            }
+            $botResponse = "*Hi there*, `".$userData['first_name']."`. I am orderTracker🙂. \n\nI can track the status of your order within seconds. Just send in your tracking id to begin.\n\n\n$tracking_id";
+            return $this->Send_model->sendMessage($userData, $botResponse);
+        }
     }
 }
