@@ -56,6 +56,18 @@ class Flow extends CI_Controller
             }
             $botResponse = "*Hi there*, `".$userData['first_name']."`. I am orderTracker🙂. \n\nI can track the status of your order within seconds. Just send in your tracking id to begin.\n\n\n$tracking_id";
             return $this->Send_model->sendMessage($userData, $botResponse);
+        } else {
+            $queryWitAI = $this->Send_model->queryWitai($userData);
+            $witAiIntent = $queryWitAI['entities']['intent'][0]['value'];
+            $witAiTrackingId = $queryWitAI['entities']['tracking_number'][0]['value'];
+            if (isset($witAiIntent) && $witAiIntent == 'track') {
+                if (isset($witAiTrackingId) && $witAiTrackingId !== null) {
+                    $botResponse = $this->orderSearch($orders, $witAiTrackingId);
+                } else {
+                    $botResponse = "Please enter your tracking id";
+                }
+                return $this->Send_model->sendMessage($userData, $botResponse);
+            }
         }
     }
 }
