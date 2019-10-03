@@ -2,11 +2,6 @@
 
 class Send_model extends CI_Model
 {
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     /**
      * Creates an array containing the required body for telegram HTTP request
      */
