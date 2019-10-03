@@ -10,19 +10,7 @@ class Flow extends CI_Controller
     }
 
     /**
-     * Webhook for this controller.
-     *
-     * Maps to the following URL
-     * 		http://localhost/index.php/flow
-     *	- or -
-     * 		http://localhost/index.php/flow/index
-     *	- or -
-     * Since this controller is set as the default controller in
-     * config/routes.php, it's displayed at http://localhost/
-     *
-     * So any other public methods not prefixed with an underscore will
-     * map to /index.php/flow/<method_name>
-     * @see https://codeigniter.com/user_guide/general/urls.html
+     * Telegram webhook method.
      */
     public function webhook()
     {
@@ -42,6 +30,7 @@ class Flow extends CI_Controller
      */
     public function start($userData)
     {
+        // $orders stores sample order data such as tracking_id, description and status of the order
         $orders = array(
             array( 'tracking_id'=>'1234', 'description'=>'Iphone 11', 'status'=>'Waiting for pick up'),
             array( 'tracking_id'=>'9797', 'description'=>'Pixel 4', 'status'=>'Shipment dispatched'),
@@ -49,6 +38,7 @@ class Flow extends CI_Controller
             array( 'tracking_id'=>'2892', 'description'=>'Haweii P90', 'status'=>'Delivery Successful'),
         );
         if ($userData['message'] == '/start') {
+            // if a user sends '/start', the default message is sent as a response
             $count = 1;
             $tracking_id = "Sample Tracking IDs:\n\n";
             foreach ($orders as $row) {
@@ -59,15 +49,48 @@ class Flow extends CI_Controller
         } else {
             $queryWitAI = $this->Send_model->queryWitai($userData);
             $witAiIntent = $queryWitAI['entities']['intent'][0]['value'];
-            $witAiTrackingId = $queryWitAI['entities']['tracking_number'][0]['value'];
+            $witAiTrackingId = $queryWitAI['entities']['tracking_id'][0]['value'];
             if (isset($witAiIntent) && $witAiIntent == 'track') {
+                // Check if the message contains entity 'track'
                 if (isset($witAiTrackingId) && $witAiTrackingId !== null) {
+                    // Check if the message contains a Tracking ID
                     $botResponse = $this->orderSearch($orders, $witAiTrackingId);
                 } else {
                     $botResponse = "Please enter your tracking id";
                 }
                 return $this->Send_model->sendMessage($userData, $botResponse);
+            } elseif (is_numeric($witAiTrackingId) && $witAiTrackingId !== null) {
+                // Check if the message contains a Tracking ID
+                $botResponse = $this->orderSearch($orders, $witAiTrackingId);
+                return $this->Send_model->sendMessage($userData, $botResponse);
+            } else {
+                $queryDialogFlow = $this->Send_model->queryDialogFlow($userData);
+                $botResponse = $queryDialogFlow['queryResult']['fulfillmentText'];
+                if (isset($botResponse) && $botResponse != null) {
+                    // Check if the message contains greetings such as hi, hello, hey
+                    return $this->Send_model->sendMessage($userData, $botResponse);
+                } else {
+                    // if !$botResponse, send the default message
+                    $botResponse = "My little witty brain could not comprehend";
+                    return $this->Send_model->sendMessage($userData, $botResponse);
+                }
             }
+        }
+    }
+    
+    /**
+     * Handles finding orders using its Tracking ID
+     */
+    public function orderSearch($orders, $query)
+    {
+        $row = array_search($query, array_column($orders, 'tracking_id'));
+        if (isset($row) && $row !== false) {
+            $trackingId = $orders[$row]['tracking_id'];
+            $description = $orders[$row]['description'];
+            $status = $orders[$row]['status'];
+            return "Tracking ID: $trackingId\n\nOrder Description: $description\n\nOrder Status: $status";
+        } else {
+            return "Order not found";
         }
     }
 }

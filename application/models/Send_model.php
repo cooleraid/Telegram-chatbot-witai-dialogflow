@@ -7,6 +7,9 @@ class Send_model extends CI_Model
         parent::__construct();
     }
 
+    /**
+     * Creates an array containing the required body for telegram HTTP request
+     */
     public function sendMessage($userData, $botRresponse)
     {
         $this->senderAction($userData, "typing");
@@ -20,6 +23,9 @@ class Send_model extends CI_Model
         $this->telegram(array('type'=>'sendMessage', 'data'=>$data));
     }
 
+    /**
+     * Sends the 'bot is typing' message
+     */
     public function senderAction($userData, $sender_action)
     {
         $data = [
@@ -29,6 +35,9 @@ class Send_model extends CI_Model
         return $this->telegram(array('type'=>'sendChatAction','data'=>$data));
     }
 
+    /**
+     * Queries the wit.ai api to fetch entities
+     */
     public function queryWitai($userData)
     {
         $token = getenv('WITAI_ACCESS_TOKEN');
@@ -38,8 +47,12 @@ class Send_model extends CI_Model
         return $this->doCurl($url, $headers, '', '');
     }
 
+     /**
+     * Queries the dialogflow api to fetch responses
+     */
     public function queryDialogFlow($userData)
     {
+        // 'gcloud auth application-default print-access-token' fetches the access token for making HTTP requests
         $token = exec('gcloud auth application-default print-access-token');
         $projectId = getenv('DIALOGFLOW_PROJECT_ID');
         $headers = array("Authorization: Bearer $token", "Content-Type: application/json; charset=utf-8");
@@ -48,6 +61,9 @@ class Send_model extends CI_Model
         return $this->doCurl($url, $headers, 'dialogflow', $body);
     }
 
+     /**
+     * Sends response back to the user
+     */
     public function telegram($data)
     {
         $token = getenv('TELEGRAM_ACCESS_TOKEN');
@@ -57,6 +73,9 @@ class Send_model extends CI_Model
         return $this->doCurl($url, $headers, '', '');
     }
 
+     /**
+     * Makes HTTP request
+     */
     public function doCurl($url, $headers, $reqType, $body)
     {
         $ch = curl_init();
